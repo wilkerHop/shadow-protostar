@@ -1,0 +1,13 @@
+#!/bin/sh
+echo "🔒 Running pre-commit health checks..."
+
+# Run Biome linter
+npm run lint || exit 1
+
+# Run TypeScript type check
+npx tsc --noEmit || exit 1
+
+# Run Sins Checker
+./scripts/health-check.sh || exit 1
+
+echo "✅ All checks passed!"
