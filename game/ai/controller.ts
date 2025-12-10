@@ -1,32 +1,56 @@
 import type { BTAction, BTContext } from "./bt/types";
+import { createTacticalNN, type NNOutput } from "./nn/model";
 
 const ATTACK_RANGE = 120;
-const APPROACH_RANGE = 150;
+
+const nnToAction = (output: NNOutput): BTAction => {
+  const actions: { action: BTAction; score: number }[] = [
+    { action: "block", score: output.block },
+    { action: "jump", score: output.jump },
+    { action: "attack", score: output.attack },
+    { action: "advance", score: output.move },
+  ];
+  return actions.reduce((prev, current) =>
+    prev.score > current.score ? prev : current,
+  ).action;
+};
 
 export const createAIController = (): ((ctx: BTContext) => BTAction) => {
+  const tacticalNN = createTacticalNN();
+
   return (context: BTContext): BTAction => {
+    if (context.ownHealth <= 0) return "block";
+
     const ownHealthPercent = context.ownHealth / context.ownMaxHealth;
+    const enemyHealthPercent = context.enemyHealth / context.enemyMaxHealth;
 
-    // Priority 0: Survival - block when low health
-    if (ownHealthPercent < 0.2) {
-      return Math.random() > 0.3 ? "block" : "retreat";
+    // Survival Strategy
+    if (ownHealthPercent < 0.2 && context.ownHealth < context.enemyHealth) {
+      return Math.random() > 0.4 ? "block" : "retreat";
     }
 
-    // Priority 1: Attack when in range
-    if (context.distanceToEnemy < ATTACK_RANGE) {
-      return Math.random() > 0.2 ? "attack" : "block";
+    // Neural Network Decision
+    const nnOutput = tacticalNN.predict({
+      distanceToEnemy: Math.min(context.distanceToEnemy, 800) / 800,
+      enemyX: 0.5,
+      enemyY: 0.5,
+      ownHealthPercent,
+      enemyHealthPercent,
+      nearWall: context.nearWall ? 1 : 0,
+      projectileIncoming: context.projectileIncoming ? 1 : 0,
+    });
+
+    const nnAction = nnToAction(nnOutput);
+
+    // Override: Must attack if very close
+    if (
+      context.distanceToEnemy < ATTACK_RANGE &&
+      nnAction !== "attack" &&
+      nnAction !== "block"
+    ) {
+      return Math.random() > 0.3 ? "attack" : "block";
     }
 
-    // Priority 2: Advance when far
-    if (context.distanceToEnemy > APPROACH_RANGE) {
-      return "advance";
-    }
-
-    // Priority 3: Mid-range tactics
-    const roll = Math.random();
-    if (roll < 0.4) return "advance";
-    if (roll < 0.6) return "attack";
-    if (roll < 0.8) return "jump";
-    return "block";
+    return nnAction;
   };
 };
