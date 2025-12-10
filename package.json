@@ -13,6 +13,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
     "next": "16.1.0-canary.16",
     "phaser": "^3.90.0",
     "react": "19.2.1",
