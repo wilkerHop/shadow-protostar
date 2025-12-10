@@ -1,0 +1,31 @@
+{
+  "name": "shadow-protostar",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "typecheck": "tsc --noEmit",
+    "health-check": "./scripts/health-check.sh",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "next": "16.1.0-canary.16",
+    "react": "19.2.1",
+    "react-dom": "19.2.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "husky": "^9.1.7",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
