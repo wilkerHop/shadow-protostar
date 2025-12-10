@@ -27,12 +27,13 @@ const createContext = (
   e: FighterEntity,
   enemy: FighterEntity,
   x: number,
+  enemyX: number,
 ): BTContext => ({
   ownHealth: e.context.health,
   ownMaxHealth: 100,
   enemyHealth: enemy.context.health,
   enemyMaxHealth: 100,
-  distanceToEnemy: 100,
+  distanceToEnemy: Math.abs(x - enemyX),
   nearWall: x < 60 || x > ARENA_WIDTH - 60,
   projectileIncoming: false,
 });
@@ -109,10 +110,10 @@ export class FightScene extends Phaser.Scene {
     const y2 = this.f2.body.position.y;
 
     const action1 = this.ai1(
-      createContext(this.gameState.entity1, this.gameState.entity2, x1),
+      createContext(this.gameState.entity1, this.gameState.entity2, x1, x2),
     );
     const action2 = this.ai2(
-      createContext(this.gameState.entity2, this.gameState.entity1, x2),
+      createContext(this.gameState.entity2, this.gameState.entity1, x2, x1),
     );
 
     applyAction(

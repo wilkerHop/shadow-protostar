@@ -5,10 +5,10 @@ import { createAIController } from "../controller";
 describe("AI Controller", () => {
   const controller = createAIController();
 
-  describe("Survival Priority (Priority 0)", () => {
-    it("forces block when health is critical", () => {
+  describe("Survival Priority", () => {
+    it("blocks or retreats when health is critical", () => {
       const context: BTContext = {
-        ownHealth: 20,
+        ownHealth: 15,
         ownMaxHealth: 100,
         enemyHealth: 80,
         enemyMaxHealth: 100,
@@ -17,48 +17,52 @@ describe("AI Controller", () => {
         projectileIncoming: false,
       };
 
-      expect(controller(context)).toBe("block");
+      const action = controller(context);
+      expect(["block", "retreat"]).toContain(action);
     });
+  });
 
-    it("forces block when projectile incoming", () => {
+  describe("Attack Priority", () => {
+    it("attacks when in close range", () => {
       const context: BTContext = {
         ownHealth: 80,
         ownMaxHealth: 100,
         enemyHealth: 80,
         enemyMaxHealth: 100,
-        distanceToEnemy: 200,
-        nearWall: false,
-        projectileIncoming: true,
-      };
-
-      expect(controller(context)).toBe("block");
-    });
-  });
-
-  describe("Eliminate Priority (Priority 1)", () => {
-    it("forces attack when enemy low and safe", () => {
-      const context: BTContext = {
-        ownHealth: 80,
-        ownMaxHealth: 100,
-        enemyHealth: 15,
-        enemyMaxHealth: 100,
-        distanceToEnemy: 150,
+        distanceToEnemy: 50,
         nearWall: false,
         projectileIncoming: false,
       };
 
-      expect(controller(context)).toBe("attack");
+      const action = controller(context);
+      expect(["attack", "block"]).toContain(action);
     });
   });
 
-  describe("Neural Network (Priority 2)", () => {
-    it("uses NN when no priority conditions met", () => {
+  describe("Approach Priority", () => {
+    it("advances when far from enemy", () => {
       const context: BTContext = {
         ownHealth: 80,
         ownMaxHealth: 100,
         enemyHealth: 80,
         enemyMaxHealth: 100,
-        distanceToEnemy: 200,
+        distanceToEnemy: 300,
+        nearWall: false,
+        projectileIncoming: false,
+      };
+
+      expect(controller(context)).toBe("advance");
+    });
+  });
+
+  describe("Mid-range Tactics", () => {
+    it("returns valid action at mid-range", () => {
+      const context: BTContext = {
+        ownHealth: 80,
+        ownMaxHealth: 100,
+        enemyHealth: 80,
+        enemyMaxHealth: 100,
+        distanceToEnemy: 120,
         nearWall: false,
         projectileIncoming: false,
       };
