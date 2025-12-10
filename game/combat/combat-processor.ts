@@ -40,27 +40,36 @@ export const processCombat = (
   y2: number,
 ): CombatResult => {
   const hits: { target: 1 | 2; damage: number; x: number; y: number }[] = [];
-
   const c1 = toCollisionFighter(e1, x1, y1);
   const c2 = toCollisionFighter(e2, x2, y2);
-
   const hit1on2 = checkCollision(c1, c2);
   const hit2on1 = checkCollision(c2, c1);
+  const baseE1 = completeAttackIfDone(e1);
+  const baseE2 = completeAttackIfDone(e2);
 
-  let newE1 = completeAttackIfDone(e1);
-  let newE2 = completeAttackIfDone(e2);
+  const finalE2 = processHit(hit1on2, e2, baseE2, 2, x2, y2, hits);
+  const finalE1 = processHit(hit2on1, e1, baseE1, 1, x1, y1, hits);
 
-  if (hit1on2.hit && e2.context.state !== "hitstun") {
-    newE2 = applyHit(newE2, hit1on2.damage, hit1on2.hitstun);
-    hits.push({ target: 2, damage: hit1on2.damage, x: x2, y: y2 });
+  return { entity1: finalE1, entity2: finalE2, hits };
+};
+
+type HitResult = { hit: boolean; damage: number; hitstun: number };
+type HitLog = { target: 1 | 2; damage: number; x: number; y: number };
+
+const processHit = (
+  hitResult: HitResult,
+  original: FighterEntity,
+  base: FighterEntity,
+  target: 1 | 2,
+  x: number,
+  y: number,
+  hits: HitLog[],
+): FighterEntity => {
+  if (hitResult.hit && original.context.state !== "hitstun") {
+    hits.push({ target, damage: hitResult.damage, x, y });
+    return applyHit(base, hitResult.damage, hitResult.hitstun);
   }
-
-  if (hit2on1.hit && e1.context.state !== "hitstun") {
-    newE1 = applyHit(newE1, hit2on1.damage, hit2on1.hitstun);
-    hits.push({ target: 1, damage: hit2on1.damage, x: x1, y: y1 });
-  }
-
-  return { entity1: newE1, entity2: newE2, hits };
+  return base;
 };
 
 const completeAttackIfDone = (entity: FighterEntity): FighterEntity => {
