@@ -20,7 +20,7 @@ export const createFighterEntity = (
   context: createFighterContext(facingRight),
   currentAttack: null,
   attackFrame: 0,
-  hurtbox: createHurtbox(-20, -30, 40, 60),
+  hurtbox: createHurtbox(-25, -35, 50, 70),
 });
 
 export const updateEntityState = (entity: FighterEntity): FighterEntity => ({

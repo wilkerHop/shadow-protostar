@@ -1,14 +1,15 @@
 import Phaser from "phaser";
-import type { BTContext } from "@/game/ai/bt/types";
+import type { BTAction, BTContext } from "@/game/ai/bt/types";
 import { createAIController } from "@/game/ai/controller";
 import { createFighterEntity, type FighterEntity } from "@/game/fighter/entity";
+import {
+  createFighterParts,
+  type FighterParts,
+  updateFighterParts,
+} from "@/game/renderer/fighter-renderer";
 import { emitStateChange, updateGameState } from "@/game/store";
 import { createVFXState } from "@/game/vfx/hit-effects";
-import {
-  applyScreenShake,
-  getStateColor,
-  renderHitEffect,
-} from "@/game/vfx/vfx-renderer";
+import { applyScreenShake, renderHitEffect } from "@/game/vfx/vfx-renderer";
 import { applyAction } from "./actions";
 import { type GameLoopState, tickGameLoop } from "./game-loop";
 
@@ -18,10 +19,7 @@ const FLOOR_Y = 550;
 const ROUND_TIME = 99;
 const FRAMES_PER_SECOND = 60;
 
-type SceneFighter = {
-  body: MatterJS.BodyType;
-  graphics: Phaser.GameObjects.Rectangle;
-};
+type SceneFighter = { body: MatterJS.BodyType; parts: FighterParts };
 
 const createContext = (
   e: FighterEntity,
@@ -80,12 +78,10 @@ export class FightScene extends Phaser.Scene {
   }
 
   private createFighters(): void {
-    const g1 = this.add.rectangle(200, 500, 40, 60, 0x3b82f6);
     const b1 = this.matter.add.rectangle(200, 500, 40, 60, { friction: 0.1 });
-    const g2 = this.add.rectangle(600, 500, 40, 60, 0xef4444);
     const b2 = this.matter.add.rectangle(600, 500, 40, 60, { friction: 0.1 });
-    this.f1 = { body: b1, graphics: g1 };
-    this.f2 = { body: b2, graphics: g2 };
+    this.f1 = { body: b1, parts: createFighterParts(this, 200, 500, 0x3b82f6) };
+    this.f2 = { body: b2, parts: createFighterParts(this, 600, 500, 0xef4444) };
   }
 
   private initGameState(): void {
@@ -100,21 +96,15 @@ export class FightScene extends Phaser.Scene {
 
   update(): void {
     if (!this.f1 || !this.f2 || !this.gameState) return;
-
     this.frameCount += 1;
     this.updateTimer();
+    this.processFrame();
+  }
 
-    const x1 = this.f1.body.position.x;
-    const y1 = this.f1.body.position.y;
-    const x2 = this.f2.body.position.x;
-    const y2 = this.f2.body.position.y;
-
-    const action1 = this.ai1(
-      createContext(this.gameState.entity1, this.gameState.entity2, x1, x2),
-    );
-    const action2 = this.ai2(
-      createContext(this.gameState.entity2, this.gameState.entity1, x2, x1),
-    );
+  private processFrame(): void {
+    if (!this.f1 || !this.f2 || !this.gameState) return;
+    const { x1, y1, x2, y2 } = this.getPositions();
+    const { action1, action2 } = this.getActions(x1, x2);
 
     applyAction(
       action1,
@@ -136,35 +126,74 @@ export class FightScene extends Phaser.Scene {
       action1,
       action2,
     );
-
     this.syncGraphics(x1, y1, x2, y2);
     this.renderVFX();
     this.syncUIState();
   }
 
+  private getPositions(): { x1: number; y1: number; x2: number; y2: number } {
+    return {
+      x1: this.f1?.body.position.x ?? 0,
+      y1: this.f1?.body.position.y ?? 0,
+      x2: this.f2?.body.position.x ?? 0,
+      y2: this.f2?.body.position.y ?? 0,
+    };
+  }
+
+  private getActions(
+    x1: number,
+    x2: number,
+  ): { action1: BTAction; action2: BTAction } {
+    if (!this.gameState) return { action1: "block", action2: "block" };
+    return {
+      action1: this.ai1(
+        createContext(this.gameState.entity1, this.gameState.entity2, x1, x2),
+      ),
+      action2: this.ai2(
+        createContext(this.gameState.entity2, this.gameState.entity1, x2, x1),
+      ),
+    };
+  }
+
   private updateTimer(): void {
-    if (this.frameCount % FRAMES_PER_SECOND === 0 && this.timer > 0) {
+    if (this.frameCount % FRAMES_PER_SECOND === 0 && this.timer > 0)
       this.timer -= 1;
-    }
   }
 
   private syncGraphics(x1: number, y1: number, x2: number, y2: number): void {
     if (!this.f1 || !this.f2 || !this.gameState) return;
-    this.f1.graphics.setPosition(x1, y1);
-    this.f2.graphics.setPosition(x2, y2);
-    this.f1.graphics.setFillStyle(
-      getStateColor(this.gameState.entity1.context.state, 0x3b82f6),
+    const e1 = this.gameState.entity1;
+    const e2 = this.gameState.entity2;
+    const totalF1 = getTotalFrames(e1);
+    const totalF2 = getTotalFrames(e2);
+
+    updateFighterParts(
+      this.f1.parts,
+      x1,
+      y1,
+      e1.context.state,
+      this.frameCount,
+      e1.attackFrame,
+      totalF1,
+      true,
+      0x3b82f6,
     );
-    this.f2.graphics.setFillStyle(
-      getStateColor(this.gameState.entity2.context.state, 0xef4444),
+    updateFighterParts(
+      this.f2.parts,
+      x2,
+      y2,
+      e2.context.state,
+      this.frameCount,
+      e2.attackFrame,
+      totalF2,
+      false,
+      0xef4444,
     );
   }
 
   private renderVFX(): void {
     if (!this.gameState) return;
-    for (const sprite of this.effectSprites) {
-      sprite.destroy();
-    }
+    for (const s of this.effectSprites) s.destroy();
     this.effectSprites = this.gameState.vfx.hitEffects.map((e) =>
       renderHitEffect(this, e),
     );
@@ -181,3 +210,10 @@ export class FightScene extends Phaser.Scene {
     emitStateChange();
   }
 }
+
+const getTotalFrames = (e: FighterEntity): number =>
+  e.currentAttack
+    ? e.currentAttack.startupFrames +
+      e.currentAttack.activeFrames +
+      e.currentAttack.recoveryFrames
+    : 14;

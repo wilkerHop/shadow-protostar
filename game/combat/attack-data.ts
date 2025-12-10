@@ -34,31 +34,31 @@ export const getActiveHitbox = (
 export const LIGHT_PUNCH: AttackData = {
   name: "Light Punch",
   startupFrames: 3,
-  activeFrames: 3,
-  recoveryFrames: 8,
-  hitbox: createHitbox(30, -20, 40, 30, 5, 10, 2, 0),
+  activeFrames: 5,
+  recoveryFrames: 6,
+  hitbox: createHitbox(20, -15, 80, 50, 8, 12, 3, 0),
 };
 
 export const HEAVY_PUNCH: AttackData = {
   name: "Heavy Punch",
-  startupFrames: 7,
-  activeFrames: 4,
-  recoveryFrames: 15,
-  hitbox: createHitbox(25, -25, 50, 40, 12, 18, 5, -2),
+  startupFrames: 5,
+  activeFrames: 6,
+  recoveryFrames: 12,
+  hitbox: createHitbox(15, -20, 100, 60, 15, 20, 6, -2),
 };
 
 export const LIGHT_KICK: AttackData = {
   name: "Light Kick",
   startupFrames: 4,
-  activeFrames: 3,
-  recoveryFrames: 10,
-  hitbox: createHitbox(20, 0, 60, 25, 6, 12, 3, 0),
+  activeFrames: 5,
+  recoveryFrames: 8,
+  hitbox: createHitbox(10, 5, 90, 40, 10, 14, 4, 0),
 };
 
 export const HEAVY_KICK: AttackData = {
   name: "Heavy Kick",
-  startupFrames: 10,
-  activeFrames: 5,
-  recoveryFrames: 20,
-  hitbox: createHitbox(15, -10, 70, 50, 15, 22, 7, -3),
+  startupFrames: 8,
+  activeFrames: 7,
+  recoveryFrames: 16,
+  hitbox: createHitbox(5, 0, 110, 70, 20, 25, 8, -3),
 };

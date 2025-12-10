@@ -1,7 +1,7 @@
 import type { BTAction, BTContext } from "./bt/types";
 
-const ATTACK_RANGE = 80;
-const APPROACH_RANGE = 200;
+const ATTACK_RANGE = 120;
+const APPROACH_RANGE = 150;
 
 export const createAIController = (): ((ctx: BTContext) => BTAction) => {
   return (context: BTContext): BTAction => {

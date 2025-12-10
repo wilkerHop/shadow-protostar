@@ -19,7 +19,8 @@ describe("combat/attack-data", () => {
     });
 
     it("returns recovery after active", () => {
-      expect(getAttackPhase(LIGHT_PUNCH, 6)).toBe("recovery");
+      // LIGHT_PUNCH: startup=3, active=5, so recovery starts at frame 8
+      expect(getAttackPhase(LIGHT_PUNCH, 8)).toBe("recovery");
     });
   });
 
