@@ -19,6 +19,7 @@ export type SceneFighter = { body: MatterJS.BodyType; parts: FighterParts };
 export const createArena = (
   matter: Phaser.Physics.Matter.MatterPhysics,
 ): void => {
+  matter.world.setBounds(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
   matter.add.rectangle(ARENA_WIDTH / 2, FLOOR_Y, ARENA_WIDTH, 20, {
     isStatic: true,
   });
