@@ -80,6 +80,46 @@ fi
 echo "✅ No large files found."
 
 # =============================================================================
+# 7. The Sin of Untested Code: Functions without test suites
+# =============================================================================
+echo ""
+echo "📋 Checking for files without test suites..."
+
+UNTESTED_FILES=""
+GAME_DIR="game"
+
+if [ -d "$GAME_DIR" ]; then
+  # Find all .ts files in game/ that export functions (excluding test files and types)
+  for file in $(find "$GAME_DIR" -name "*.ts" ! -path "*/__tests__/*" ! -name "*.test.ts" 2>/dev/null); do
+    # Check if file exports functions (has 'export const' or 'export function')
+    if grep -qE "^export (const|function)" "$file" 2>/dev/null; then
+      # Get the directory and filename
+      dir=$(dirname "$file")
+      basename=$(basename "$file" .ts)
+      
+      # Expected test file location
+      test_file="$dir/__tests__/$basename.test.ts"
+      
+      # Check if test file exists
+      if [ ! -f "$test_file" ]; then
+        UNTESTED_FILES="$UNTESTED_FILES$file\n"
+      fi
+    fi
+  done
+fi
+
+if [ -n "$UNTESTED_FILES" ]; then
+  echo ""
+  echo "⚠️  WARNING: The following files have functions but no test suite:"
+  echo -e "$UNTESTED_FILES"
+  echo "Expected: <dir>/__tests__/<filename>.test.ts"
+  echo ""
+  echo "❌ STRICT MODE: Exiting due to untested files."
+  exit 1
+fi
+echo "✅ All function files have test suites."
+
+# =============================================================================
 # Success!
 # =============================================================================
 echo ""
