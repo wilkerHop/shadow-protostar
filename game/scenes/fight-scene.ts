@@ -9,11 +9,14 @@ import {
   getStateColor,
   renderHitEffect,
 } from "@/game/vfx/vfx-renderer";
+import { applyAction } from "./actions";
 import { type GameLoopState, tickGameLoop } from "./game-loop";
 
 const ARENA_WIDTH = 800;
 const ARENA_HEIGHT = 600;
 const FLOOR_Y = 550;
+const ROUND_TIME = 99;
+const FRAMES_PER_SECOND = 60;
 
 type SceneFighter = {
   body: MatterJS.BodyType;
@@ -41,6 +44,8 @@ export class FightScene extends Phaser.Scene {
   private ai1 = createAIController();
   private ai2 = createAIController();
   private effectSprites: Phaser.GameObjects.Arc[] = [];
+  private frameCount = 0;
+  private timer = ROUND_TIME;
 
   constructor() {
     super({ key: "FightScene" });
@@ -95,6 +100,9 @@ export class FightScene extends Phaser.Scene {
   update(): void {
     if (!this.f1 || !this.f2 || !this.gameState) return;
 
+    this.frameCount += 1;
+    this.updateTimer();
+
     const x1 = this.f1.body.position.x;
     const y1 = this.f1.body.position.y;
     const x2 = this.f2.body.position.x;
@@ -105,6 +113,17 @@ export class FightScene extends Phaser.Scene {
     );
     const action2 = this.ai2(
       createContext(this.gameState.entity2, this.gameState.entity1, x2),
+    );
+
+    applyAction(
+      action1,
+      { body: this.f1.body, facingRight: true },
+      this.matter,
+    );
+    applyAction(
+      action2,
+      { body: this.f2.body, facingRight: false },
+      this.matter,
     );
 
     this.gameState = tickGameLoop(
@@ -120,6 +139,12 @@ export class FightScene extends Phaser.Scene {
     this.syncGraphics(x1, y1, x2, y2);
     this.renderVFX();
     this.syncUIState();
+  }
+
+  private updateTimer(): void {
+    if (this.frameCount % FRAMES_PER_SECOND === 0 && this.timer > 0) {
+      this.timer -= 1;
+    }
   }
 
   private syncGraphics(x1: number, y1: number, x2: number, y2: number): void {
@@ -150,6 +175,7 @@ export class FightScene extends Phaser.Scene {
     updateGameState({
       player1Health: this.gameState.entity1.context.health,
       player2Health: this.gameState.entity2.context.health,
+      timer: this.timer,
     });
     emitStateChange();
   }
