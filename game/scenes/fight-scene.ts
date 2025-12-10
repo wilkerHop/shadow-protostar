@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { createAIController } from "@/game/ai/controller";
 import { createFighterEntity } from "@/game/fighter/entity";
 import { updateFighterParts } from "@/game/renderer/fighter-renderer";
-import { emitStateChange, updateGameState } from "@/game/store";
+import { emitStateChange, getSnapshot, updateGameState } from "@/game/store";
 import { createVFXState } from "@/game/vfx/hit-effects";
 import { applyScreenShake, renderHitEffect } from "@/game/vfx/vfx-renderer";
 import { applyAction } from "./actions";
@@ -56,6 +56,19 @@ export class FightScene extends Phaser.Scene {
 
   update(): void {
     if (!this.f1 || !this.f2 || !this.gameState) return;
+
+    // Check for Game Over
+    if (getSnapshot().gameStatus === "finished") return;
+
+    if (
+      this.gameState.entity1.context.health <= 0 ||
+      this.gameState.entity2.context.health <= 0
+    ) {
+      updateGameState({ gameStatus: "finished" });
+      emitStateChange();
+      return;
+    }
+
     this.frameCount += 1;
     if (this.frameCount % FRAMES_PER_SECOND === 0 && this.timer > 0)
       this.timer -= 1;
@@ -77,16 +90,27 @@ export class FightScene extends Phaser.Scene {
       createBTContext(this.gameState.entity2, this.gameState.entity1, x2, x1),
     );
 
-    applyAction(
-      action1,
-      { body: this.f1.body, facingRight: true },
-      this.matter,
-    );
-    applyAction(
-      action2,
-      { body: this.f2.body, facingRight: false },
-      this.matter,
-    );
+    if (
+      this.gameState.entity1.context.state !== "hitstun" &&
+      this.gameState.entity1.context.state !== "knockdown"
+    ) {
+      applyAction(
+        action1,
+        { body: this.f1.body, facingRight: true },
+        this.matter,
+      );
+    }
+
+    if (
+      this.gameState.entity2.context.state !== "hitstun" &&
+      this.gameState.entity2.context.state !== "knockdown"
+    ) {
+      applyAction(
+        action2,
+        { body: this.f2.body, facingRight: false },
+        this.matter,
+      );
+    }
     this.gameState = tickGameLoop(
       this.gameState,
       x1,
