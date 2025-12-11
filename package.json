@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
-    "next": "16.1.0-canary.16",
+    "next": "16.1.0-canary.17",
     "phaser": "^3.90.0",
     "react": "19.2.1",
     "react-dom": "19.2.1"
